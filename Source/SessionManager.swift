@@ -25,6 +25,7 @@
 import Foundation
 
 /// Responsible for creating and managing `Request` objects, as well as their underlying `NSURLSession`.
+// 创建和管理Request,底层是NSURLSession
 open class SessionManager {
 
     // MARK: - Helper Types
@@ -47,6 +48,7 @@ open class SessionManager {
     /// directly for any ad hoc requests.
     open static let `default`: SessionManager = {
         let configuration = URLSessionConfiguration.default
+        // 设置header
         configuration.httpAdditionalHeaders = SessionManager.defaultHTTPHeaders
 
         return SessionManager(configuration: configuration)
@@ -130,9 +132,11 @@ open class SessionManager {
     open var startRequestsImmediately: Bool = true
 
     /// The request adapter called each time a new request is created.
+    /// 适配器
     open var adapter: RequestAdapter?
 
     /// The request retrier called each time a request encounters an error to determine whether to retry the request.
+    /// 重新发送请求
     open var retrier: RequestRetrier? {
         get { return delegate.retrier }
         set { delegate.retrier = newValue }
@@ -151,7 +155,7 @@ open class SessionManager {
 
     let queue = DispatchQueue(label: "org.alamofire.session-manager." + UUID().uuidString)
 
-    // MARK: - Lifecycle
+    // MARK: - Lifecycle,生命周期
 
     /// Creates an instance with the specified `configuration`, `delegate` and `serverTrustPolicyManager`.
     ///
@@ -163,6 +167,7 @@ open class SessionManager {
     ///                                       challenges. `nil` by default.
     ///
     /// - returns: The new `SessionManager` instance.
+    /// 创建SessionManager,设置默认的configuration,delegate.
     public init(
         configuration: URLSessionConfiguration = URLSessionConfiguration.default,
         delegate: SessionDelegate = SessionDelegate(),
@@ -234,8 +239,11 @@ open class SessionManager {
         var originalRequest: URLRequest?
 
         do {
+            // 根据URL, method, headers创建请求
             originalRequest = try URLRequest(url: url, method: method, headers: headers)
+            // 将传入的参数和原始请求进行编码.获取最终请求
             let encodedURLRequest = try encoding.encode(originalRequest!, with: parameters)
+            
             return request(encodedURLRequest)
         } catch {
             return request(originalRequest, failedWith: error)
@@ -249,6 +257,7 @@ open class SessionManager {
     /// - parameter urlRequest: The URL request.
     ///
     /// - returns: The created `DataRequest`.
+    // DataRequest底层是URLSessionDataTask
     open func request(_ urlRequest: URLRequestConvertible) -> DataRequest {
         var originalRequest: URLRequest?
 
@@ -256,6 +265,7 @@ open class SessionManager {
             originalRequest = try urlRequest.asURLRequest()
             let originalTask = DataRequest.Requestable(urlRequest: originalRequest!)
 
+            // 由会话session创建任务task
             let task = try originalTask.task(session: session, adapter: adapter, queue: queue)
             let request = DataRequest(session: session, requestTask: .data(originalTask, task))
 

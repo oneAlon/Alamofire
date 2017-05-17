@@ -87,10 +87,21 @@ class MasterViewController: UITableViewController {
                     return nil
                 }
             }
+            
 
             if let request = requestForSegue(segue) {
                 detailViewController.request = request
             }
+        }
+    }
+    
+    
+    func test() {
+        let url = URL(string: "http://www.baidu.com")
+        let URLR = URLRequest(url: url)
+        let session = URLSession(configuration: URLSessionConfiguration.default)
+        session.dataTask(with: URLR) { (data: Data?, responseObject: URLResponse?, error: Error?) in
+            
         }
     }
 }

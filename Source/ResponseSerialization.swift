@@ -153,6 +153,7 @@ extension DataRequest {
                 self.delegate.error
             )
 
+            // 结构体会默认创建一个方法,保证非空成员的赋值
             var dataResponse = DataResponse<T.SerializedObject>(
                 request: self.request,
                 response: self.response,
