@@ -74,6 +74,7 @@ public enum Result<Value> {
 // MARK: - CustomStringConvertible
 
 extension Result: CustomStringConvertible {
+    // 文本表示
     /// The textual representation used when written to an output stream, which includes whether the result was a
     /// success or failure.
     public var description: String {

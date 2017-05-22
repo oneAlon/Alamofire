@@ -192,9 +192,9 @@ public struct URLEncoding: ParameterEncoding {
 
     /// Returns a percent-escaped string following RFC 3986 for a query string key or value.
     ///
-    /// RFC 3986 states that the following characters are "reserved" characters.
+    /// RFC 3986 states that the following characters are "reserved" characters.// 保留字符
     ///
-    /// - General Delimiters: ":", "#", "[", "]", "@", "?", "/"
+    /// - General Delimiters: ":", "#", "[", "]", "@", "?", "/"// 一般分隔符
     /// - Sub-Delimiters: "!", "$", "&", "'", "(", ")", "*", "+", ",", ";", "="
     ///
     /// In RFC 3986 - Section 3.4, it states that the "?" and "/" characters should not be escaped to allow
@@ -204,10 +204,13 @@ public struct URLEncoding: ParameterEncoding {
     /// - parameter string: The string to be percent-escaped.
     ///
     /// - returns: The percent-escaped string.
+    // 将url进行转义
     public func escape(_ string: String) -> String {
         let generalDelimitersToEncode = ":#[]@" // does not include "?" or "/" due to RFC 3986 - Section 3.4
         let subDelimitersToEncode = "!$&'()*+,;="
 
+        //Returns the character set for characters allowed in a query URL component.
+        // 获取url中允许的字符集
         var allowedCharacterSet = CharacterSet.urlQueryAllowed
         allowedCharacterSet.remove(charactersIn: "\(generalDelimitersToEncode)\(subDelimitersToEncode)")
 
@@ -224,6 +227,7 @@ public struct URLEncoding: ParameterEncoding {
         //
         //==========================================================================================================
 
+        // 小于8.3的系统做适配
         if #available(iOS 8.3, *) {
             escaped = string.addingPercentEncoding(withAllowedCharacters: allowedCharacterSet) ?? string
         } else {
@@ -237,6 +241,7 @@ public struct URLEncoding: ParameterEncoding {
 
                 let substring = string.substring(with: range)
 
+                // ?? 如果为空,去后值,如果不问空,取前值得强制转换
                 escaped += substring.addingPercentEncoding(withAllowedCharacters: allowedCharacterSet) ?? substring
 
                 index = endIndex
@@ -283,6 +288,7 @@ public struct URLEncoding: ParameterEncoding {
 
 /// Uses `JSONSerialization` to create a JSON representation of the parameters object, which is set as the body of the
 /// request. The `Content-Type` HTTP header field of an encoded request is set to `application/json`.
+// 将参数以json的形式编码到httpBody中.
 public struct JSONEncoding: ParameterEncoding {
 
     // MARK: Properties
@@ -325,7 +331,7 @@ public struct JSONEncoding: ParameterEncoding {
         guard let parameters = parameters else { return urlRequest }
 
         do {
-            // 序列化
+            // 将参数序列化data
             let data = try JSONSerialization.data(withJSONObject: parameters, options: options)
             // 设置Content-Type
             if urlRequest.value(forHTTPHeaderField: "Content-Type") == nil {
@@ -354,6 +360,7 @@ public struct JSONEncoding: ParameterEncoding {
         guard let jsonObject = jsonObject else { return urlRequest }
 
         do {
+            // 将jsonObject转换为data,(接收的Any类型)
             let data = try JSONSerialization.data(withJSONObject: jsonObject, options: options)
 
             if urlRequest.value(forHTTPHeaderField: "Content-Type") == nil {
