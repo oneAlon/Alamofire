@@ -227,7 +227,7 @@ open class SessionManager {
     /// - parameter headers:    The HTTP headers. `nil` by default.
     ///
     /// - returns: The created `DataRequest`.
-    @discardableResult
+    @discardableResult// 如果外部没有使用这个方法的返回值,就会有警告,用@discardableResult可以消除这个警告
     open func request(
         _ url: URLConvertible,
         method: HTTPMethod = .get,
@@ -236,6 +236,7 @@ open class SessionManager {
         headers: HTTPHeaders? = nil)
         -> DataRequest
     {
+        // originalRequest为URLRequest的可选类型
         var originalRequest: URLRequest?
 
         do {

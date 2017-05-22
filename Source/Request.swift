@@ -25,6 +25,7 @@
 import Foundation
 
 /// A type that can inspect and optionally adapt a `URLRequest` in some manner if necessary.
+// 请求适配
 public protocol RequestAdapter {
     /// Inspects and adapts the specified `URLRequest` in some manner if necessary and returns the result.
     ///
@@ -39,6 +40,7 @@ public protocol RequestAdapter {
 // MARK: -
 
 /// A closure executed when the `RequestRetrier` determines whether a `Request` should be retried or not.
+// typealias起别名,
 public typealias RequestRetryCompletion = (_ shouldRetry: Bool, _ timeDelay: TimeInterval) -> Void
 
 /// A type that determines whether a request should be retried after being executed by the specified session manager
@@ -54,11 +56,12 @@ public protocol RequestRetrier {
     /// - parameter request:    The request that failed due to the encountered error.
     /// - parameter error:      The error encountered when executing the request.
     /// - parameter completion: The completion closure to be executed when retry decision has been determined.
+    // escaping逃逸闭包,闭包作为一个参数,并且在return之后才执行(也就是这个闭包超出了这个函数的管理范围)
     func should(_ manager: SessionManager, retry request: Request, with error: Error, completion: @escaping RequestRetryCompletion)
 }
 
 // MARK: -
-
+/// 创建URLSessionTask
 protocol TaskConvertible {
     func task(session: URLSession, adapter: RequestAdapter?, queue: DispatchQueue) throws -> URLSessionTask
 }
@@ -77,6 +80,7 @@ open class Request {
     /// A closure executed when monitoring upload or download progress of a request.
     public typealias ProgressHandler = (Progress) -> Void
 
+    // 请求任务枚举
     enum RequestTask {
         case data(TaskConvertible?, URLSessionTask?)
         case download(TaskConvertible?, URLSessionTask?)
@@ -87,6 +91,7 @@ open class Request {
     // MARK: Properties
 
     /// The delegate for the underlying task.
+    // 任务task的代理
     open internal(set) var delegate: TaskDelegate {
         get {
             taskDelegateLock.lock() ; defer { taskDelegateLock.unlock() }
@@ -125,6 +130,9 @@ open class Request {
 
     // MARK: Lifecycle
 
+    // session:会话
+    // requestTask:任务,枚举类型
+    // 设置任务代理
     init(session: URLSession, requestTask: RequestTask, error: Error? = nil) {
         self.session = session
 

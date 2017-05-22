@@ -40,6 +40,7 @@ public enum AFError: Error {
     ///                               encoding process.
     /// - propertyListEncodingFailed: Property list serialization failed with an underlying system error during
     ///                               encoding process.
+    // 参数编码错误原因
     public enum ParameterEncodingFailureReason {
         case missingURL
         case jsonEncodingFailed(error: Error)
@@ -71,6 +72,7 @@ public enum AFError: Error {
     ///                                         underlying error.
     /// - inputStreamReadFailed:                The attempt to read an encoded body part `InputStream` failed with
     ///                                         underlying system error.
+    // 多部分编码错误,一般发生在上传和下载请求中
     public enum MultipartEncodingFailureReason {
         case bodyPartURLInvalid(url: URL)
         case bodyPartFilenameInvalid(in: URL)
@@ -115,6 +117,7 @@ public enum AFError: Error {
     /// - stringSerializationFailed:       String serialization failed using the provided `String.Encoding`.
     /// - jsonSerializationFailed:         JSON serialization failed with an underlying system error.
     /// - propertyListSerializationFailed: Property list serialization failed with an underlying system error.
+    // 序列化失败原因
     public enum ResponseSerializationFailureReason {
         case inputDataNil
         case inputDataNilOrZeroLength

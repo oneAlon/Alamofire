@@ -39,6 +39,10 @@ extension Notification.Name {
         /// Posted when a `URLSessionTask` is completed. The notification `object` contains the completed `URLSessionTask`.
         public static let DidComplete = Notification.Name(rawValue: "org.alamofire.notification.name.task.didComplete")
     }
+    
+    // 给任务task绑定相关通知
+    // Notification.Key.Tak用于做一个标识,作为key取出Notification中的user info
+    // Notification.default.post(name: Notification.Name.Task.DidComplete, object: strongSelf, userInfo: [Notification.Key.Task: task])
 }
 
 // MARK: -

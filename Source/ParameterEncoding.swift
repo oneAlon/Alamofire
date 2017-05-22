@@ -24,6 +24,8 @@
 
 import Foundation
 
+// 参数编码
+
 /// HTTP method definitions.
 ///
 /// See https://tools.ietf.org/html/rfc7231#section-4.3
@@ -41,7 +43,7 @@ public enum HTTPMethod: String {
 
 // MARK: -
 
-/// A dictionary of parameters to apply to a `URLRequest`.
+/// A dictionary of parameters to apply to a `URLRequest`. 字典类型
 public typealias Parameters = [String: Any]
 
 /// A type used to define how a set of parameters are applied to a `URLRequest`.
@@ -54,6 +56,7 @@ public protocol ParameterEncoding {
     /// - throws: An `AFError.parameterEncodingFailed` error if encoding fails.
     ///
     /// - returns: The encoded request.
+    // 将parameters参数和urlRequest做绑定.并有异常抛出(如果编码错误)
     func encode(_ urlRequest: URLRequestConvertible, with parameters: Parameters?) throws -> URLRequest
 }
 
@@ -78,6 +81,7 @@ public struct URLEncoding: ParameterEncoding {
     ///                    requests and sets as the HTTP body for requests with any other HTTP method.
     /// - queryString:     Sets or appends encoded query string result to existing query string.
     /// - httpBody:        Sets encoded query string result as the HTTP body of the URL request.
+    // 声明枚举类型,url的拼接方式
     public enum Destination {
         case methodDependent, queryString, httpBody
     }
@@ -85,6 +89,7 @@ public struct URLEncoding: ParameterEncoding {
     // MARK: Properties
 
     /// Returns a default `URLEncoding` instance.
+    // 这里是单例,单例的设计模式.
     public static var `default`: URLEncoding { return URLEncoding() }
 
     /// Returns a `URLEncoding` instance with a `.methodDependent` destination.
@@ -120,26 +125,33 @@ public struct URLEncoding: ParameterEncoding {
     /// - throws: An `Error` if the encoding process encounters an error.
     ///
     /// - returns: The encoded request.
+    // 这里实现协议ParameterEncoding的方法,将参数和URLRequest做绑定
     public func encode(_ urlRequest: URLRequestConvertible, with parameters: Parameters?) throws -> URLRequest {
+        // 判断URLRequest的异常情况
         var urlRequest = try urlRequest.asURLRequest()
-
+        
+        // guard拦截parameters异常情况
         guard let parameters = parameters else { return urlRequest }
-
+        
+        // 是否将参数编码到URL中
         if let method = HTTPMethod(rawValue: urlRequest.httpMethod ?? "GET"), encodesParametersInURL(with: method) {
+            // 取出url
             guard let url = urlRequest.url else {
                 throw AFError.parameterEncodingFailed(reason: .missingURL)
             }
 
+            // 分解URL
             if var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false), !parameters.isEmpty {
                 let percentEncodedQuery = (urlComponents.percentEncodedQuery.map { $0 + "&" } ?? "") + query(parameters)
                 urlComponents.percentEncodedQuery = percentEncodedQuery
                 urlRequest.url = urlComponents.url
             }
-        } else {
+        } else {// 未将参数拼接到url中
+            // 设置Content-Type
             if urlRequest.value(forHTTPHeaderField: "Content-Type") == nil {
                 urlRequest.setValue("application/x-www-form-urlencoded; charset=utf-8", forHTTPHeaderField: "Content-Type")
             }
-
+            // 设置httpBody
             urlRequest.httpBody = query(parameters).data(using: .utf8, allowLossyConversion: false)
         }
 
@@ -234,7 +246,9 @@ public struct URLEncoding: ParameterEncoding {
         return escaped
     }
 
+    // 将参数处理成字符串,key是string类型,value是any类型
     private func query(_ parameters: [String: Any]) -> String {
+        // 定义一个数组,存放的元组,(key, value)
         var components: [(String, String)] = []
 
         for key in parameters.keys.sorted(by: <) {
@@ -245,6 +259,7 @@ public struct URLEncoding: ParameterEncoding {
         return components.map { "\($0)=\($1)" }.joined(separator: "&")
     }
 
+    // 是否将参数拼接到url中
     private func encodesParametersInURL(with method: HTTPMethod) -> Bool {
         switch destination {
         case .queryString:
@@ -279,6 +294,7 @@ public struct JSONEncoding: ParameterEncoding {
     public static var prettyPrinted: JSONEncoding { return JSONEncoding(options: .prettyPrinted) }
 
     /// The options for writing the parameters as JSON data.
+    // json序列化的写入方式,是一个结构体,提供了一个选项prettyPrinted(更好的打印,只读)
     public let options: JSONSerialization.WritingOptions
 
     // MARK: Initialization
@@ -288,6 +304,7 @@ public struct JSONEncoding: ParameterEncoding {
     /// - parameter options: The options for writing the parameters as JSON data.
     ///
     /// - returns: The new `JSONEncoding` instance.
+    // 初始化方法,提供了默认值
     public init(options: JSONSerialization.WritingOptions = []) {
         self.options = options
     }
@@ -308,8 +325,9 @@ public struct JSONEncoding: ParameterEncoding {
         guard let parameters = parameters else { return urlRequest }
 
         do {
+            // 序列化
             let data = try JSONSerialization.data(withJSONObject: parameters, options: options)
-
+            // 设置Content-Type
             if urlRequest.value(forHTTPHeaderField: "Content-Type") == nil {
                 urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
             }

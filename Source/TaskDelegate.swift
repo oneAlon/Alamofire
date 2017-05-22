@@ -44,6 +44,7 @@ open class TaskDelegate: NSObject {
         didSet { reset() }
     }
 
+    // CFAbsoluteTime --> CFTimeInterval --> Double
     var initialResponseTime: CFAbsoluteTime?
     var credential: URLCredential?
     var metrics: AnyObject? // URLSessionTaskMetrics
@@ -54,6 +55,7 @@ open class TaskDelegate: NSObject {
         self.task = task
 
         self.queue = {
+            // 操作队列
             let operationQueue = OperationQueue()
 
             operationQueue.maxConcurrentOperationCount = 1
@@ -71,6 +73,7 @@ open class TaskDelegate: NSObject {
 
     // MARK: URLSessionTaskDelegate
 
+    // task代理回调,闭包
     var taskWillPerformHTTPRedirection: ((URLSession, URLSessionTask, HTTPURLResponse, URLRequest) -> URLRequest?)?
     var taskDidReceiveChallenge: ((URLSession, URLSessionTask, URLAuthenticationChallenge) -> (URLSession.AuthChallengeDisposition, URLCredential?))?
     var taskNeedNewBodyStream: ((URLSession, URLSessionTask) -> InputStream?)?
