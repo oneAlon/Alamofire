@@ -35,6 +35,7 @@ open class TaskDelegate: NSObject {
     open let queue: OperationQueue
 
     /// The data returned by the server.
+    // 服务器返回的数据
     public var data: Data? { return nil }
 
     /// The error generated throughout the lifecyle of the task.
@@ -45,8 +46,11 @@ open class TaskDelegate: NSObject {
     }
 
     // CFAbsoluteTime --> CFTimeInterval --> Double
+    // 时间
     var initialResponseTime: CFAbsoluteTime?
+    // 凭证
     var credential: URLCredential?
+    // 统计task的一些相关信息
     var metrics: AnyObject? // URLSessionTaskMetrics
 
     // MARK: Lifecycle
@@ -54,11 +58,13 @@ open class TaskDelegate: NSObject {
     init(task: URLSessionTask?) {
         self.task = task
 
+        // 创建一个函数,并且立即调用
         self.queue = {
             // 操作队列
             let operationQueue = OperationQueue()
 
             operationQueue.maxConcurrentOperationCount = 1
+            // 保证队列中的operation都是暂停状态
             operationQueue.isSuspended = true
             operationQueue.qualityOfService = .utility
 
@@ -74,11 +80,13 @@ open class TaskDelegate: NSObject {
     // MARK: URLSessionTaskDelegate
 
     // task代理回调,闭包
+    // 这是URLSessionTaskDelegate的方法
     var taskWillPerformHTTPRedirection: ((URLSession, URLSessionTask, HTTPURLResponse, URLRequest) -> URLRequest?)?
     var taskDidReceiveChallenge: ((URLSession, URLSessionTask, URLAuthenticationChallenge) -> (URLSession.AuthChallengeDisposition, URLCredential?))?
     var taskNeedNewBodyStream: ((URLSession, URLSessionTask) -> InputStream?)?
     var taskDidCompleteWithError: ((URLSession, URLSessionTask, Error?) -> Void)?
 
+    // 重定向, 返回重定向的URLRequest, 如果给重定向赋值了就返回代理函数的返回值(即如果taskWillPerformHTTPRedirection不为空,就调用redirectRequest = taskWillPerformHTTPRedirection(session, task, response, request)方法), 如果没有赋值就返回原始的URLRequest
     @objc(URLSession:task:willPerformHTTPRedirection:newRequest:completionHandler:)
     func urlSession(
         _ session: URLSession,
@@ -89,6 +97,7 @@ open class TaskDelegate: NSObject {
     {
         var redirectRequest: URLRequest? = request
 
+        // 可选绑定
         if let taskWillPerformHTTPRedirection = taskWillPerformHTTPRedirection {
             redirectRequest = taskWillPerformHTTPRedirection(session, task, response, request)
         }
@@ -96,6 +105,7 @@ open class TaskDelegate: NSObject {
         completionHandler(redirectRequest)
     }
 
+    // 接收到挑战, 处理验证相关的事务
     @objc(URLSession:task:didReceiveChallenge:completionHandler:)
     func urlSession(
         _ session: URLSession,
@@ -103,9 +113,11 @@ open class TaskDelegate: NSObject {
         didReceive challenge: URLAuthenticationChallenge,
         completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void)
     {
+        // 枚举类型, 授权配置
         var disposition: URLSession.AuthChallengeDisposition = .performDefaultHandling
         var credential: URLCredential?
 
+        // 如果服务器需要验证客户端,只需要给taskDidReceiveChallenge赋值即可
         if let taskDidReceiveChallenge = taskDidReceiveChallenge {
             (disposition, credential) = taskDidReceiveChallenge(session, task, challenge)
         } else if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust {
@@ -137,6 +149,7 @@ open class TaskDelegate: NSObject {
         completionHandler(disposition, credential)
     }
 
+    
     @objc(URLSession:task:needNewBodyStream:)
     func urlSession(
         _ session: URLSession,
@@ -152,6 +165,7 @@ open class TaskDelegate: NSObject {
         completionHandler(bodyStream)
     }
 
+    
     @objc(URLSession:task:didCompleteWithError:)
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         if let taskDidCompleteWithError = taskDidCompleteWithError {
@@ -181,6 +195,7 @@ class DataTaskDelegate: TaskDelegate, URLSessionDataDelegate {
 
     var dataTask: URLSessionDataTask { return task as! URLSessionDataTask }
 
+    // 如果dataStream赋值了,那么data就为空
     override var data: Data? {
         if dataStream != nil {
             return nil
@@ -190,11 +205,14 @@ class DataTaskDelegate: TaskDelegate, URLSessionDataDelegate {
     }
 
     var progress: Progress
+    // 这是一个元组,不是函数, progresssHandler执行的队列
     var progressHandler: (closure: Request.ProgressHandler, queue: DispatchQueue)?
 
+    // 自定义的数据处理函数
     var dataStream: ((_ data: Data) -> Void)?
 
     private var totalBytesReceived: Int64 = 0
+    // 数据容器
     private var mutableData: Data
 
     private var expectedContentLength: Int64?
@@ -224,6 +242,7 @@ class DataTaskDelegate: TaskDelegate, URLSessionDataDelegate {
     var dataTaskDidReceiveData: ((URLSession, URLSessionDataTask, Data) -> Void)?
     var dataTaskWillCacheResponse: ((URLSession, URLSessionDataTask, CachedURLResponse) -> CachedURLResponse?)?
 
+    // 接收到服务端的响应, 接收到和数据相关的一些参数
     func urlSession(
         _ session: URLSession,
         dataTask: URLSessionDataTask,
@@ -234,13 +253,16 @@ class DataTaskDelegate: TaskDelegate, URLSessionDataDelegate {
 
         expectedContentLength = response.expectedContentLength
 
+        // 如果对dataTaskDidReceiveResponse赋值了,就调用
         if let dataTaskDidReceiveResponse = dataTaskDidReceiveResponse {
             disposition = dataTaskDidReceiveResponse(session, dataTask, response)
         }
 
+        // 控制是否要接收数据(枚举类型,cancel取消, allow允许, becomeDownload将请求变为下载, becomeStream变为stream)
         completionHandler(disposition)
     }
 
+    // dataTask转为downloadTask,可以通过设置dataTaskDidReceiveResponse为.becomeDownload,将dataTask转为downloadTask
     func urlSession(
         _ session: URLSession,
         dataTask: URLSessionDataTask,
@@ -249,7 +271,9 @@ class DataTaskDelegate: TaskDelegate, URLSessionDataDelegate {
         dataTaskDidBecomeDownloadTask?(session, dataTask, downloadTask)
     }
 
+    // 接收到服务器数据
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+        // 消耗时长
         if initialResponseTime == nil { initialResponseTime = CFAbsoluteTimeGetCurrent() }
 
         if let dataTaskDidReceiveData = dataTaskDidReceiveData {
@@ -274,6 +298,7 @@ class DataTaskDelegate: TaskDelegate, URLSessionDataDelegate {
         }
     }
 
+    // 是否缓存响应
     func urlSession(
         _ session: URLSession,
         dataTask: URLSessionDataTask,
@@ -304,11 +329,15 @@ class DownloadTaskDelegate: TaskDelegate, URLSessionDownloadDelegate {
     var resumeData: Data?
     override var data: Data? { return resumeData }
 
+    // 这是一个函数
     var destination: DownloadRequest.DownloadFileDestination?
 
+    // 临时url
     var temporaryURL: URL?
+    // 存储url
     var destinationURL: URL?
 
+    // 文件路径
     var fileURL: URL? { return destination != nil ? destinationURL : temporaryURL }
 
     // MARK: Lifecycle
