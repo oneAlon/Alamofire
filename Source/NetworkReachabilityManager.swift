@@ -61,9 +61,11 @@ public class NetworkReachabilityManager {
     // MARK: - Properties
 
     /// Whether the network is currently reachable.
+    // 网络是否可达
     public var isReachable: Bool { return isReachableOnWWAN || isReachableOnEthernetOrWiFi }
 
     /// Whether the network is currently reachable over the WWAN interface.
+    // 是否使用手机网络
     public var isReachableOnWWAN: Bool { return networkReachabilityStatus == .reachable(.wwan) }
 
     /// Whether the network is currently reachable over Ethernet or WiFi interface.
@@ -76,9 +78,11 @@ public class NetworkReachabilityManager {
     }
 
     /// The dispatch queue to execute the `listener` closure on.
+    /// listener在哪个队列中调用,默认为主队列
     public var listenerQueue: DispatchQueue = DispatchQueue.main
 
     /// A closure executed when the network reachability status changes.
+    /// 监听,闭包
     public var listener: Listener?
 
     private var flags: SCNetworkReachabilityFlags? {
@@ -101,6 +105,7 @@ public class NetworkReachabilityManager {
     /// - parameter host: The host used to evaluate network reachability.
     ///
     /// - returns: The new `NetworkReachabilityManager` instance.
+    /// 指定host
     public convenience init?(host: String) {
         guard let reachability = SCNetworkReachabilityCreateWithName(nil, host) else { return nil }
         self.init(reachability: reachability)
@@ -112,6 +117,7 @@ public class NetworkReachabilityManager {
     /// status of the device, both IPv4 and IPv6.
     ///
     /// - returns: The new `NetworkReachabilityManager` instance.
+    /// 默认指向0.0.0.0
     public convenience init?() {
         var address = sockaddr_in()
         address.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
@@ -131,6 +137,7 @@ public class NetworkReachabilityManager {
         self.previousFlags = SCNetworkReachabilityFlags()
     }
 
+    // 当manager被销毁的时候就会停止监控
     deinit {
         stopListening()
     }
@@ -140,11 +147,13 @@ public class NetworkReachabilityManager {
     /// Starts listening for changes in network reachability status.
     ///
     /// - returns: `true` if listening was started successfully, `false` otherwise.
+    /// @discardableResult标识可以忽略返回值
     @discardableResult
     public func startListening() -> Bool {
         var context = SCNetworkReachabilityContext(version: 0, info: nil, retain: nil, release: nil, copyDescription: nil)
         context.info = Unmanaged.passUnretained(self).toOpaque()
 
+        // 设置callback回调函数
         let callbackEnabled = SCNetworkReachabilitySetCallback(
             reachability,
             { (_, flags, info) in
@@ -154,8 +163,9 @@ public class NetworkReachabilityManager {
             &context
         )
 
+        // 设置callback回调队列
         let queueEnabled = SCNetworkReachabilitySetDispatchQueue(reachability, listenerQueue)
-
+        // 队列异步执行
         listenerQueue.async {
             self.previousFlags = SCNetworkReachabilityFlags()
             self.notifyListener(self.flags ?? SCNetworkReachabilityFlags())
@@ -175,12 +185,12 @@ public class NetworkReachabilityManager {
     func notifyListener(_ flags: SCNetworkReachabilityFlags) {
         guard previousFlags != flags else { return }
         previousFlags = flags
-
         listener?(networkReachabilityStatusForFlags(flags))
     }
 
     // MARK: - Internal - Network Reachability Status
 
+    /// 根据flags获得网络状态
     func networkReachabilityStatusForFlags(_ flags: SCNetworkReachabilityFlags) -> NetworkReachabilityStatus {
         guard flags.contains(.reachable) else { return .notReachable }
 
@@ -202,6 +212,7 @@ public class NetworkReachabilityManager {
 
 // MARK: -
 
+// Equatable是一个协议,判断两个值是否相等
 extension NetworkReachabilityManager.NetworkReachabilityStatus: Equatable {}
 
 /// Returns whether the two network reachability status values are equal.
@@ -210,6 +221,7 @@ extension NetworkReachabilityManager.NetworkReachabilityStatus: Equatable {}
 /// - parameter rhs: The right-hand side value to compare.
 ///
 /// - returns: `true` if the two values are equal, `false` otherwise.
+// static函数可以写在类的代码块外
 public func ==(
     lhs: NetworkReachabilityManager.NetworkReachabilityStatus,
     rhs: NetworkReachabilityManager.NetworkReachabilityStatus)
