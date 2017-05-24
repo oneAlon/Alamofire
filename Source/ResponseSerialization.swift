@@ -31,6 +31,7 @@ public protocol DataResponseSerializerProtocol {
     associatedtype SerializedObject
 
     /// A closure used by response handlers that takes a request, response, data and error and returns a result.
+    // 序列化闭包
     var serializeResponse: (URLRequest?, HTTPURLResponse?, Data?, Error?) -> Result<SerializedObject> { get }
 }
 
@@ -89,6 +90,7 @@ public struct DownloadResponseSerializer<Value>: DownloadResponseSerializerProto
 
 extension Request {
     var timeline: Timeline {
+        // 请求完成时间
         let requestCompletedTime = self.endTime ?? CFAbsoluteTimeGetCurrent()
         let initialResponseTime = self.delegate.initialResponseTime ?? requestCompletedTime
 
@@ -139,6 +141,7 @@ extension DataRequest {
     /// - parameter completionHandler:  The code to be executed once the request has finished.
     ///
     /// - returns: The request.
+    // T要实现DataResponseSerializerProtocol里的方法
     @discardableResult
     public func response<T: DataResponseSerializerProtocol>(
         queue: DispatchQueue? = nil,

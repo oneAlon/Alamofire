@@ -95,6 +95,10 @@ class MasterViewController: UITableViewController {
         }
     }
     
-
+    func test() {
+        let testTime = Timeline()
+        testTime.description
+        testTime.debugDescription
+    }
 }
 

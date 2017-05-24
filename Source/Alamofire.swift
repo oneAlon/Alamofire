@@ -35,6 +35,7 @@ public protocol URLConvertible {
     func asURL() throws -> URL
 }
 
+// 为String继承协议URLConvertible, 实现协议方法asURL
 extension String: URLConvertible {
     /// Returns a URL if `self` represents a valid URL string that conforms to RFC 2396 or throws an `AFError`.
     ///
