@@ -25,6 +25,7 @@
 import Foundation
 
 /// The type in which all data response serializers must conform to in order to serialize a response.
+// 数据序列化协议
 public protocol DataResponseSerializerProtocol {
     /// The type of serialized object to be created by this `DataResponseSerializerType`.
     associatedtype SerializedObject

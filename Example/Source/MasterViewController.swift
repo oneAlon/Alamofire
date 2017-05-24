@@ -95,35 +95,6 @@ class MasterViewController: UITableViewController {
         }
     }
     
-    
-    func test() {
-        let url = URL(string: "http://www.baidu.com")
-        let URLR = URLRequest(url: url)
-        let session = URLSession(configuration: URLSessionConfiguration.default)
-        session.dataTask(with: URLR) { (data: Data?, responseObject: URLResponse?, error: Error?) in
-            
-        }
-        
-        var headers: HTTPHeaders = [:]
-        Alamofire.request("http://www.baidu.com", header : headers).response { (DefaultDataResponse) in
-            print(DefaultDataResponse)
-        }
-        
-        let myManager = Alamofire.SessionManager.default
-        
-        let con = URLSessionConfiguration.default
-        con.httpAdditionalHeaders = ["DNT": "123"];
-        myManager.session.configuration = con
-    }
-    
-    func chognxieDaiLiFangFa() {
-        let manager = Alamofire.SessionManager.default
-        let delegate = manager.delegate
-        
-        delegate.taskWillPerformHTTPRedirection = {
-            session , task, response, request in
-            
-        }
-    }
+
 }
 
