@@ -27,6 +27,7 @@ import Foundation
 /// Responsible for managing the mapping of `ServerTrustPolicy` objects to a given host.
 open class ServerTrustPolicyManager {
     /// The dictionary of policies mapped to a particular host.
+    // 策略, 字典类型
     open let policies: [String: ServerTrustPolicy]
 
     /// Initializes the `ServerTrustPolicyManager` instance with the given policies.
@@ -39,6 +40,7 @@ open class ServerTrustPolicyManager {
     /// - parameter policies: A dictionary of all policies mapped to a particular host.
     ///
     /// - returns: The new `ServerTrustPolicyManager` instance.
+    // 初始化
     public init(policies: [String: ServerTrustPolicy]) {
         self.policies = policies
     }
@@ -51,6 +53,7 @@ open class ServerTrustPolicyManager {
     /// - parameter host: The host to use when searching for a matching policy.
     ///
     /// - returns: The server trust policy for the given host if found.
+    // 给定host,返回匹配的ServerTrustPolicy策略
     open func serverTrustPolicy(forHost host: String) -> ServerTrustPolicy? {
         return policies[host]
     }
@@ -63,8 +66,10 @@ extension URLSession {
         static var managerKey = "URLSession.ServerTrustPolicyManager"
     }
 
+    // 这里使用runtime给URLSession动态添加属性.
     var serverTrustPolicyManager: ServerTrustPolicyManager? {
         get {
+            // 类型转换
             return objc_getAssociatedObject(self, &AssociatedKeys.managerKey) as? ServerTrustPolicyManager
         }
         set (manager) {
@@ -113,6 +118,7 @@ extension URLSession {
 ///
 /// - customEvaluation:         Uses the associated closure to evaluate the validity of the server trust.
 public enum ServerTrustPolicy {
+    // 枚举类型,设置关联值
     case performDefaultEvaluation(validateHost: Bool)
     case performRevokedEvaluation(validateHost: Bool, revocationFlags: CFOptionFlags)
     case pinCertificates(certificates: [SecCertificate], validateCertificateChain: Bool, validateHost: Bool)
@@ -127,9 +133,11 @@ public enum ServerTrustPolicy {
     /// - parameter bundle: The bundle to search for all `.cer` files.
     ///
     /// - returns: All certificates within the given bundle.
+    // 静态函数,虽然属于ServerTrustPolicy,但是比较独立
+    /// 获取证书, 返回一个数组
     public static func certificates(in bundle: Bundle = Bundle.main) -> [SecCertificate] {
         var certificates: [SecCertificate] = []
-
+        // 在本地查找一.cer等结尾的证书
         let paths = Set([".cer", ".CER", ".crt", ".CRT", ".der", ".DER"].map { fileExtension in
             bundle.paths(forResourcesOfType: fileExtension, inDirectory: nil)
         }.joined())
@@ -151,9 +159,10 @@ public enum ServerTrustPolicy {
     /// - parameter bundle: The bundle to search for all `*.cer` files.
     ///
     /// - returns: All public keys within the given bundle.
+    // 获取公钥
     public static func publicKeys(in bundle: Bundle = Bundle.main) -> [SecKey] {
         var publicKeys: [SecKey] = []
-
+        
         for certificate in certificates(in: bundle) {
             if let publicKey = publicKey(for: certificate) {
                 publicKeys.append(publicKey)
@@ -171,14 +180,20 @@ public enum ServerTrustPolicy {
     /// - parameter host:        The host of the challenge protection space.
     ///
     /// - returns: Whether the server trust is valid.
+    // 评估
+    // 是枚举中的一个函数,所以只有初始化枚举才能使用这个函数.
+    // 传入证书和主机地址
     public func evaluate(_ serverTrust: SecTrust, forHost host: String) -> Bool {
         var serverTrustIsValid = false
 
         switch self {
+        // 默认, 只有合格证书才能通过
         case let .performDefaultEvaluation(validateHost):
+            // 创建策略
             let policy = SecPolicyCreateSSL(true, validateHost ? host as CFString : nil)
+            // 为证书设置策略
             SecTrustSetPolicies(serverTrust, policy)
-
+            // 验证
             serverTrustIsValid = trustIsValid(serverTrust)
         case let .performRevokedEvaluation(validateHost, revocationFlags):
             let defaultPolicy = SecPolicyCreateSSL(true, validateHost ? host as CFString : nil)
@@ -239,6 +254,7 @@ public enum ServerTrustPolicy {
 
     // MARK: - Private - Trust Validation
 
+    // 验证是否成功
     private func trustIsValid(_ trust: SecTrust) -> Bool {
         var isValid = false
 
@@ -257,7 +273,7 @@ public enum ServerTrustPolicy {
     }
 
     // MARK: - Private - Certificate Data
-
+    // 将证书转为二进制数组
     private func certificateData(for trust: SecTrust) -> [Data] {
         var certificates: [SecCertificate] = []
 
