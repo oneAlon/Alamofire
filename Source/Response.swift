@@ -24,6 +24,11 @@
 
 import Foundation
 
+/*
+ 如果只是存储数据,那么应该把这个类设计成结构体, struct是值传递,对数据的操作更加安全
+ 除了定义需要保存数据的属性外,还需要定义构造函数
+ */
+
 /// Used to store all data associated with an non-serialized response of a data or upload request.
 public struct DefaultDataResponse {
     /// The URL request sent to the server.
@@ -39,8 +44,10 @@ public struct DefaultDataResponse {
     public let error: Error?
 
     /// The timeline of the complete lifecycle of the request.
+    // 请求的时间线
     public let timeline: Timeline
 
+    // 统计信息
     var _metrics: AnyObject?
 
     /// Creates a `DefaultDataResponse` instance from the specified parameters.
@@ -82,6 +89,7 @@ public struct DataResponse<Value> {
     public let data: Data?
 
     /// The result of response serialization.
+    // 序列化结果
     public let result: Result<Value>
 
     /// The timeline of the complete lifecycle of the request.
@@ -121,6 +129,7 @@ public struct DataResponse<Value> {
 
 // MARK: -
 
+// DataResponse的打印信息, 实现协议方法
 extension DataResponse: CustomStringConvertible, CustomDebugStringConvertible {
     /// The textual representation used when written to an output stream, which includes whether the result was a
     /// success or failure.
@@ -218,6 +227,7 @@ public struct DefaultDownloadResponse {
     public let destinationURL: URL?
 
     /// The resume data generated if the request was cancelled.
+    // 可恢复的数据
     public let resumeData: Data?
 
     /// The error encountered while executing or validating the request.
