@@ -89,6 +89,7 @@ extension URLRequest: URLRequestConvertible {
 
 // MARK: -
 
+// 对URLRequest做扩展
 extension URLRequest {
     /// Creates an instance with the specified `method`, `urlString` and `headers`.
     ///
@@ -99,9 +100,9 @@ extension URLRequest {
     /// - returns: The new `URLRequest` instance.
     public init(url: URLConvertible, method: HTTPMethod, headers: HTTPHeaders? = nil) throws {
         let url = try url.asURL()
-
+        
         self.init(url: url)
-
+        
         httpMethod = method.rawValue
 
         if let headers = headers {
